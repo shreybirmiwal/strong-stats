@@ -83,7 +83,7 @@ const Results = ({ data }) => {
             </header>
 
             {/* Calendar */}
-            <div className="bg-gray-800 p-6 rounded-xl shadow-lg max-w-md mx-auto">
+            <div className="bg-gray-800 p-6 rounded-xl shadow-lg mx-auto">
                 <h3 className="text-2xl font-semibold mb-4 flex items-center gap-2">
                     📅 Gym Attendance
                     <span className="text-sm bg-blue-500 px-2 py-1 rounded-full">
@@ -92,17 +92,25 @@ const Results = ({ data }) => {
                 </h3>
                 <Calendar
                     className="w-full"
-                    tileContent={({ date, view }) => {
+                    tileClassName={({ date, view }) => {
+                        if (view !== 'month') return '';
                         const dateString = date.toISOString().split('T')[0];
-                        return uniqueDates.includes(dateString) ? (
-                            <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mt-1"></div>
-                        ) : null;
+                        const today = new Date();
+                        const isPast = date < today.setHours(0, 0, 0, 0);
+                        if (uniqueDates.includes(dateString)) return 'react-calendar__tile--attended';
+                        if (isPast && !uniqueDates.includes(dateString)) return 'react-calendar__tile--missed';
+                        return '';
                     }}
+                    tileContent={({ date, view }) => null} // No dot, just color
+                    onClickDay={() => { }} // disables click
+                    selectRange={false}
+                    showNeighboringMonth={false}
                 />
+
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-6 mx-auto w-full">
                 {Object.keys(groupedByExercise).map((exercise) => {
                     const exerciseData = groupedByExercise[exercise];
                     const chartData = {
@@ -111,34 +119,39 @@ const Results = ({ data }) => {
                             {
                                 label: 'Weight (lbs)',
                                 data: exerciseData.map(d => d.weight),
-                                borderColor: '#38bdf8', // Tailwind's sky-400
+                                borderColor: '#38bdf8',
                                 backgroundColor: 'rgba(56, 189, 248, 0.1)',
                             },
                             {
                                 label: 'Reps',
                                 data: exerciseData.map(d => d.reps),
-                                borderColor: '#f472b6', // Tailwind's pink-400
+                                borderColor: '#f472b6',
                                 backgroundColor: 'rgba(244, 114, 180, 0.1)',
                             },
                             {
                                 label: 'Score (Weight + Reps)',
                                 data: exerciseData.map(d => d.score),
-                                borderColor: '#fbbf24', // Tailwind's amber-400
+                                borderColor: '#fbbf24',
                                 backgroundColor: 'rgba(251, 191, 36, 0.1)',
                             },
                         ],
                     };
 
                     return (
-                        <div key={exercise} className="bg-gray-800 p-4 rounded-xl shadow-lg">
+                        <div key={exercise} className="bg-gray-800 p-4 rounded-xl shadow-lg w-full">
                             <h4 className="text-xl font-semibold mb-2 text-blue-300">{exercise}</h4>
-                            <div className="h-64">
-                                <Line data={chartData} options={chartOptions} />
+
+                            <div className="h-[250px] sm:h-[350px] md:h-[400px]">
+                                <Line data={chartData} options={{
+                                    ...chartOptions,
+                                    maintainAspectRatio: false // ← Critical fix
+                                }} />
                             </div>
                         </div>
                     );
                 })}
             </div>
+
 
             {/* Insights */}
             {/* <div className="bg-gray-800 p-6 rounded-xl shadow-lg mx-auto max-w-4xl">
